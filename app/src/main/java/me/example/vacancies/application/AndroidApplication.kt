@@ -1,4 +1,4 @@
-package me.example.vacancies.appplication
+package me.example.vacancies.application
 
 import android.app.Application
 import me.example.vacancies.repository.Resolver
