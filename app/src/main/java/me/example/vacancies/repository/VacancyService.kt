@@ -9,5 +9,5 @@ interface VacancyService {
     @GET("positions.json")
     fun getVacancy(
         @Query("search") speciality: String,
-        @Query("page") page: Int) : Call<List<Vacancy>>
+        @Query("page") page: Int) : Call<List<Vacancy>?>
 }

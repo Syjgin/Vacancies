@@ -7,6 +7,6 @@ class AndroidApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        Resolver.create()
+        Resolver.create(applicationContext)
     }
 }

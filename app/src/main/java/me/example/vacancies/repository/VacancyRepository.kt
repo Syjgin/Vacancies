@@ -23,14 +23,18 @@ class VacancyRepository {
         Resolver.serviceComponent.inject(this)
     }
 
-    fun getVacancy(searchTerm: String, page: Int) : LiveData<List<Vacancy>> {
+    fun getVacancy(searchTerm: String, page: Int) : LiveData<List<Vacancy>?> {
         val data = MutableLiveData<List<Vacancy>>()
-        service.getVacancy(searchTerm, page).enqueue(object : Callback<List<Vacancy>> {
-            override fun onFailure(call: Call<List<Vacancy>>, t: Throwable) {
+        service.getVacancy(searchTerm, page).enqueue(object : Callback<List<Vacancy>?> {
+            override fun onFailure(call: Call<List<Vacancy>?>, t: Throwable) {
                 EventBus.getDefault().post(LoadingFailureEvent(t.localizedMessage))
             }
 
-            override fun onResponse(call: Call<List<Vacancy>>, response: Response<List<Vacancy>>) {
+            override fun onResponse(call: Call<List<Vacancy>?>, response: Response<List<Vacancy>?>) {
+                if(response.body() == null) {
+                    EventBus.getDefault().post(LoadingFailureEvent("null response"))
+                    return
+                }
                 data.value = response.body()
             }
 

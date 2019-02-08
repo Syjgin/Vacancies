@@ -38,7 +38,9 @@ class VacancyListAdapter : RecyclerView.Adapter<VacancyListAdapter.VacancyListIt
         holder.itemView.findViewById<TextView>(R.id.city).text = currentItem.location
     }
 
-    fun loadData(newData: List<Vacancy>) {
+    fun loadData(newData: List<Vacancy>?) {
+        if(newData == null)
+            return
         data.addAll(newData)
         notifyDataSetChanged()
     }

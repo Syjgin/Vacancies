@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         mainList.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         mainList.adapter = adapter
         val model = ViewModelProviders.of(this).get(VacancyListViewModel::class.java)
-        model.getVacancyList("", 0).observe(this, Observer<List<Vacancy>>{ list ->
+        model.getVacancyList("", 0).observe(this, Observer<List<Vacancy>?>{ list ->
             adapter.loadData(list)
         })
     }

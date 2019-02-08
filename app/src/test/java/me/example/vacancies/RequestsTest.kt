@@ -27,7 +27,7 @@ class RequestsTest {
 
     @Before
     fun prepare() {
-        testServiceComponent = DaggerTestServiceComponent.builder().serviceModule(ServiceModule()).build()
+        testServiceComponent = DaggerTestServiceComponent.builder().serviceModule(ServiceModule(TestRetrofitProvider())).build()
         testServiceComponent.inject(this)
     }
 
