@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">vacancies</string>
+    <string name="loading_failure">Can\'t load requested data</string>
+    <string name="date_pattern">Created at: %s</string>
+    <string name="type_pattern">Type: %s</string>
+    <string name="vacancy_link">Open in browser</string>
+    <string name="location">Location:</string>
+    <string name="how_to_apply">How to apply:</string>
+    <string name="details">Details</string>
+</resources>
