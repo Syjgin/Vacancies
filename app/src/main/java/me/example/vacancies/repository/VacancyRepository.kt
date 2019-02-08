@@ -1,7 +1,9 @@
 package me.example.vacancies.repository
 
 import androidx.lifecycle.LiveData
+import androidx.paging.DataSource
 import androidx.paging.LivePagedListBuilder
+import androidx.paging.PageKeyedDataSource
 import androidx.paging.PagedList
 import me.example.vacancies.models.Constants
 import me.example.vacancies.models.LoadingFailureEvent
@@ -31,24 +33,7 @@ class VacancyRepository {
 
     fun getVacancy(searchTerm: String) : LiveData<PagedList<Vacancy>> {
 
-        return LivePagedListBuilder(if(searchTerm.isEmpty()) database.vacancyDao().getByPage() else database.vacancyDao().getByQuery(searchTerm), getConfig())
-            .setBoundaryCallback(object : PagedList.BoundaryCallback<Vacancy>() {
-                override fun onZeroItemsLoaded() {
-                    loadPage(searchTerm, 0)
-                }
-
-                override fun onItemAtEndLoaded(itemAtEnd: Vacancy) {
-                    val newPage = itemAtEnd.page!!+1
-                    loadPage(searchTerm, newPage)
-                }
-
-                override fun onItemAtFrontLoaded(itemAtFront: Vacancy) {
-                    val newPage = itemAtFront.page!!-1
-                    if(newPage > 0) {
-                        loadPage(searchTerm, newPage)
-                    }
-                }
-            })
+        return LivePagedListBuilder(VacancyDataSourceFactory(searchTerm, database, service), getConfig())
             .build()
     }
 
@@ -62,28 +47,82 @@ class VacancyRepository {
             .build()
     }
 
-    private fun loadPage(searchTerm: String, page: Int) {
-        service.getVacancy(searchTerm, page).enqueue(object : Callback<List<Vacancy>?> {
-            override fun onFailure(call: Call<List<Vacancy>?>, t: Throwable) {
-                EventBus.getDefault().post(LoadingFailureEvent(t.localizedMessage))
-            }
-
-            override fun onResponse(call: Call<List<Vacancy>?>, response: Response<List<Vacancy>?>) {
-                val body = response.body()
-                if(body == null) {
-                    EventBus.getDefault().post(LoadingFailureEvent("null response"))
-                    return
+    class VacancyDataSourceFactory(val searchTerm: String,
+                                   val database: VacancyDatabase,
+                                   val service: VacancyService): DataSource.Factory<Int, Vacancy>() {
+        override fun create(): DataSource<Int, Vacancy> {
+            return object : PageKeyedDataSource<Int, Vacancy>() {
+                override fun loadInitial(params: LoadInitialParams<Int>, callback: LoadInitialCallback<Int, Vacancy>) {
+                    loadPage(searchTerm, 0, object : ResponseCallback {
+                        override fun handleResponse(resp: List<Vacancy>) {
+                            callback.onResult(resp, null, 1)
+                        }
+                    })
                 }
-                Executors.newSingleThreadExecutor().execute {
-                    val data2save = body.map {
-                        val modified = it
-                        modified.page = page
-                        return@map modified
+
+                override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, Vacancy>) {
+                    loadPage(searchTerm, params.key, object : ResponseCallback {
+                        override fun handleResponse(resp: List<Vacancy>) {
+                            callback.onResult(resp, params.key+1)
+                        }
+                    })
+                }
+
+                override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, Vacancy>) {
+                    loadPage(searchTerm, params.key, object : ResponseCallback {
+                        override fun handleResponse(resp: List<Vacancy>) {
+                            callback.onResult(resp, params.key-1)
+                        }
+                    })
+                }
+
+            }
+        }
+
+        interface ResponseCallback {
+            fun handleResponse(resp: List<Vacancy>)
+        }
+
+        private fun loadPage(searchTerm: String, page: Int, callback: ResponseCallback) {
+            service.getVacancy(searchTerm, page).enqueue(object : Callback<List<Vacancy>?> {
+                override fun onFailure(call: Call<List<Vacancy>?>, t: Throwable) {
+                    EventBus.getDefault().post(LoadingFailureEvent(t.localizedMessage))
+                    returnDatabaseResult(callback, searchTerm, page)
+                }
+
+                override fun onResponse(call: Call<List<Vacancy>?>, response: Response<List<Vacancy>?>) {
+                    val body = response.body()
+                    if(body == null) {
+                        EventBus.getDefault().post(LoadingFailureEvent("null response"))
+                        returnDatabaseResult(callback, searchTerm, page)
+                        return
                     }
-                    database.vacancyDao().save(data2save)
+                    Executors.newSingleThreadExecutor().execute {
+                        val data2save = body.map {
+                            val modified = it
+                            modified.page = page
+                            return@map modified
+                        }
+                        database.vacancyDao().save(data2save)
+                        returnDatabaseResult(callback, searchTerm, page)
+                    }
                 }
-            }
 
-        })
+            })
+        }
+
+        private fun returnDatabaseResult(
+            callback: ResponseCallback,
+            searchTerm: String,
+            page: Int
+        ) {
+            callback.handleResponse(
+                if (searchTerm.isEmpty())
+                    database.vacancyDao().getByPage(page)
+                else
+                    database.vacancyDao().getByQuery(searchTerm, page)
+            )
+        }
     }
+
 }
