@@ -17,4 +17,5 @@ data class Vacancy(
     val title: String,
     val description: String,
     val how_to_apply: String,
-    val company_logo: String?) : Serializable
+    val company_logo: String?,
+    var page: Int?) : Serializable

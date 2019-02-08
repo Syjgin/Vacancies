@@ -1,6 +1,9 @@
 package me.example.vacancies.repository
 
 import androidx.lifecycle.LiveData
+import androidx.paging.LivePagedListBuilder
+import androidx.paging.PagedList
+import me.example.vacancies.models.Constants
 import me.example.vacancies.models.LoadingFailureEvent
 import me.example.vacancies.models.Vacancy
 import me.example.vacancies.repository.db.VacancyDatabase
@@ -26,7 +29,40 @@ class VacancyRepository {
         Resolver.serviceComponent.inject(this)
     }
 
-    fun getVacancy(searchTerm: String, page: Int) : LiveData<List<Vacancy>> {
+    fun getVacancy(searchTerm: String) : LiveData<PagedList<Vacancy>> {
+
+        return LivePagedListBuilder(if(searchTerm.isEmpty()) database.vacancyDao().getByPage() else database.vacancyDao().getByQuery(searchTerm), getConfig())
+            .setBoundaryCallback(object : PagedList.BoundaryCallback<Vacancy>() {
+                override fun onZeroItemsLoaded() {
+                    loadPage(searchTerm, 0)
+                }
+
+                override fun onItemAtEndLoaded(itemAtEnd: Vacancy) {
+                    val newPage = itemAtEnd.page!!+1
+                    loadPage(searchTerm, newPage)
+                }
+
+                override fun onItemAtFrontLoaded(itemAtFront: Vacancy) {
+                    val newPage = itemAtFront.page!!-1
+                    if(newPage > 0) {
+                        loadPage(searchTerm, newPage)
+                    }
+                }
+            })
+            .build()
+    }
+
+    private fun getConfig() : PagedList.Config {
+        return PagedList.Config.Builder()
+            .setEnablePlaceholders(false)
+            .setInitialLoadSizeHint(Constants.PageSize)
+            .setMaxSize(PagedList.Config.MAX_SIZE_UNBOUNDED)
+            .setPageSize(Constants.PageSize)
+            .setPrefetchDistance(5)
+            .build()
+    }
+
+    private fun loadPage(searchTerm: String, page: Int) {
         service.getVacancy(searchTerm, page).enqueue(object : Callback<List<Vacancy>?> {
             override fun onFailure(call: Call<List<Vacancy>?>, t: Throwable) {
                 EventBus.getDefault().post(LoadingFailureEvent(t.localizedMessage))
@@ -39,11 +75,15 @@ class VacancyRepository {
                     return
                 }
                 Executors.newSingleThreadExecutor().execute {
-                    database.vacancyDao().save(body)
+                    val data2save = body.map {
+                        val modified = it
+                        modified.page = page
+                        return@map modified
+                    }
+                    database.vacancyDao().save(data2save)
                 }
             }
 
         })
-        return if(searchTerm.isEmpty()) database.vacancyDao().getAll() else database.vacancyDao().getByQuery(searchTerm)
     }
 }

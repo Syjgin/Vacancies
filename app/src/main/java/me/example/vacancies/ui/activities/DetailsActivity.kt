@@ -41,8 +41,6 @@ class DetailsActivity : AppCompatActivity() {
         location.text = data.location
         description.loadData(data.description, "text/html", "UTF-8")
         howto.loadData(data.how_to_apply,"text/html", "UTF-8")
-        //description.text = Html.fromHtml(data.description)
-        //howto.text = Html.fromHtml(data.how_to_apply)
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {

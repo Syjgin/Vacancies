@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.paging.PagedListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import me.example.vacancies.R
@@ -12,21 +13,19 @@ import me.example.vacancies.models.OpenDetailsEvent
 import me.example.vacancies.models.Vacancy
 import org.greenrobot.eventbus.EventBus
 
-class VacancyListAdapter : RecyclerView.Adapter<VacancyListAdapter.VacancyListItem>() {
-    private var data = mutableListOf<Vacancy>()
+class VacancyListAdapter : PagedListAdapter<Vacancy, VacancyListAdapter.VacancyListItem>(VacancyItemCallback()) {
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VacancyListItem {
         val mainView = LayoutInflater.from(parent.context).inflate(R.layout.vacancy_item, parent, false)
         val holder = VacancyListItem(mainView)
         holder.itemView.setOnClickListener {
-            EventBus.getDefault().post(OpenDetailsEvent(data[holder.adapterPosition]))
+            EventBus.getDefault().post(OpenDetailsEvent(getItem(holder.adapterPosition)!!))
         }
         return holder
     }
 
-    override fun getItemCount(): Int = data.size
-
     override fun onBindViewHolder(holder: VacancyListItem, position: Int) {
-        val currentItem = data[position]
+        val currentItem = getItem(position) ?: return
         holder.itemView.findViewById<TextView>(R.id.title).text = currentItem.title
         val imageView = holder.itemView.findViewById<ImageView>(R.id.image)
         if(currentItem.company_logo != null) {
@@ -38,12 +37,7 @@ class VacancyListAdapter : RecyclerView.Adapter<VacancyListAdapter.VacancyListIt
         holder.itemView.findViewById<TextView>(R.id.city).text = currentItem.location
     }
 
-    fun loadData(newData: List<Vacancy>?) {
-        if(newData == null)
-            return
-        data.addAll(newData)
-        notifyDataSetChanged()
-    }
+
 
     class VacancyListItem(itemView: View): RecyclerView.ViewHolder(itemView)
 }

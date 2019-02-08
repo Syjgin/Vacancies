@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.paging.PagedList
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.activity_main.*
@@ -30,9 +31,8 @@ class MainActivity : AppCompatActivity() {
         mainList.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         mainList.adapter = adapter
         val model = ViewModelProviders.of(this).get(VacancyListViewModel::class.java)
-        model.getVacancyList("", 0).observe(this, Observer<List<Vacancy>?>{ list ->
-            adapter.loadData(list)
-        })
+        model.getVacancyList("").observe(this,
+            Observer<PagedList<Vacancy>> { t -> adapter.submitList(t) })
     }
 
 
