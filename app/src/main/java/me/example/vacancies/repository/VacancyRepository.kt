@@ -19,6 +19,7 @@ import javax.inject.Inject
 class VacancyRepository {
 
     companion object {
+        var searchTerm: String = ""
         val instance by lazy { VacancyRepository() }
     }
 
@@ -27,28 +28,32 @@ class VacancyRepository {
     @Inject
     lateinit var database: VacancyDatabase
 
+    private lateinit var pagedListSource: LiveData<PagedList<Vacancy>>
+
     init {
         Resolver.serviceComponent.inject(this)
     }
 
-    fun getVacancy(searchTerm: String) : LiveData<PagedList<Vacancy>> {
-
-        return LivePagedListBuilder(VacancyDataSourceFactory(searchTerm, database, service), getConfig())
-            .build()
+    fun getVacancy(search: String) : LiveData<PagedList<Vacancy>> {
+        searchTerm = search
+        if(!::pagedListSource.isInitialized) {
+            pagedListSource = LivePagedListBuilder(VacancyDataSourceFactory(database, service), getConfig())
+                .build()
+        }
+        return pagedListSource
     }
 
     private fun getConfig() : PagedList.Config {
         return PagedList.Config.Builder()
-            .setEnablePlaceholders(false)
+            .setEnablePlaceholders(true)
             .setInitialLoadSizeHint(Constants.PageSize)
             .setMaxSize(PagedList.Config.MAX_SIZE_UNBOUNDED)
             .setPageSize(Constants.PageSize)
-            .setPrefetchDistance(5)
+            .setPrefetchDistance(Constants.PrefetchDistance)
             .build()
     }
 
-    class VacancyDataSourceFactory(val searchTerm: String,
-                                   val database: VacancyDatabase,
+    class VacancyDataSourceFactory(val database: VacancyDatabase,
                                    val service: VacancyService): DataSource.Factory<Int, Vacancy>() {
         override fun create(): DataSource<Int, Vacancy> {
             return object : PageKeyedDataSource<Int, Vacancy>() {

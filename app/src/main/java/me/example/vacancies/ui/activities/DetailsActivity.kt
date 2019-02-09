@@ -3,13 +3,18 @@ package me.example.vacancies.ui.activities
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.PersistableBundle
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProviders
 import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.activity_details.*
 import me.example.vacancies.R
 import me.example.vacancies.models.Constants
 import me.example.vacancies.models.Vacancy
+import me.example.vacancies.viewmodel.VacancyDetailViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -19,6 +24,7 @@ class DetailsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_details)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
         val data = intent.getSerializableExtra(Constants.VacancyInfoKey) as Vacancy
         displayData(data)
     }
@@ -50,5 +56,24 @@ class DetailsActivity : AppCompatActivity() {
             return true
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        val model = ViewModelProviders.of(this).get(VacancyDetailViewModel::class.java)
+        model.scrollOffset = mainScroll.scrollY
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
+        super.onRestoreInstanceState(savedInstanceState)
+        val model = ViewModelProviders.of(this).get(VacancyDetailViewModel::class.java)
+        val handler = Handler(Looper.getMainLooper())
+        handler.postDelayed({
+            mainScroll.scrollTo(0, model.scrollOffset)
+        }, Constants.ScrollUpdateTimeout)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
+        super.onRestoreInstanceState(savedInstanceState, persistentState)
     }
 }

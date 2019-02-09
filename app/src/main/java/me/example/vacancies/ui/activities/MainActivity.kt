@@ -2,6 +2,8 @@ package me.example.vacancies.ui.activities
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
@@ -23,16 +25,32 @@ import org.greenrobot.eventbus.Subscribe
 class MainActivity : AppCompatActivity() {
 
     private val adapter = VacancyListAdapter()
+    private var layoutManager: LinearLayoutManager? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         EventBusUtils.registerIfNeeded(this)
-        mainList.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+        layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+        mainList.layoutManager = layoutManager
         mainList.adapter = adapter
         val model = ViewModelProviders.of(this).get(VacancyListViewModel::class.java)
+        mainList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                if(layoutManager != null) {
+                    val position = layoutManager!!.findFirstCompletelyVisibleItemPosition()
+                    model.refreshScrollPosition(position)
+                }
+            }
+        })
         model.getVacancyList("").observe(this,
-            Observer<PagedList<Vacancy>> { t -> adapter.submitList(t) })
+            Observer<PagedList<Vacancy>> { t ->
+                adapter.submitList(t)
+                val handler = Handler(Looper.getMainLooper())
+                handler.postDelayed({
+                    layoutManager?.scrollToPosition(model.scrollPosition)
+                }, Constants.UpdateTimeout)
+            })
     }
 
 
