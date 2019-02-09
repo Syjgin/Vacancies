@@ -70,7 +70,7 @@ class DetailsActivity : AppCompatActivity() {
         val handler = Handler(Looper.getMainLooper())
         handler.postDelayed({
             mainScroll.scrollTo(0, model.scrollOffset)
-        }, Constants.ScrollUpdateTimeout)
+        }, Constants.LongUpdateTimeout)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {

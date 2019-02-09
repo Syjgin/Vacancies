@@ -34,12 +34,12 @@ class RequestsTest {
     @Test
     fun serviceRequest() {
         var receivedResponse: List<Vacancy>? = null
-        service.getVacancy("", 0).enqueue(object : Callback<List<Vacancy>> {
-            override fun onFailure(call: Call<List<Vacancy>>, t: Throwable) {
+        service.getVacancy("android", 0).enqueue(object : Callback<List<Vacancy>?> {
+            override fun onFailure(call: Call<List<Vacancy>?>, t: Throwable) {
                 countDownLatch.countDown()
             }
 
-            override fun onResponse(call: Call<List<Vacancy>>, response: Response<List<Vacancy>>) {
+            override fun onResponse(call: Call<List<Vacancy>?>, response: Response<List<Vacancy>?>) {
                 receivedResponse = response.body()
                 countDownLatch.countDown()
             }

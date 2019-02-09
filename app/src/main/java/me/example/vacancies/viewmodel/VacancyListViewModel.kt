@@ -9,9 +9,17 @@ import me.example.vacancies.repository.VacancyRepository
 class VacancyListViewModel : ViewModel() {
     var scrollPosition = 0
         private set
+    companion object {
+        var searchTerm: String = ""
+        private set
+    }
 
-    fun getVacancyList(searchTerm: String): LiveData<PagedList<Vacancy>> {
-        return VacancyRepository.instance.getVacancy(searchTerm)
+    fun getVacancyList(): LiveData<PagedList<Vacancy>> {
+        return VacancyRepository.instance.getVacancy(searchTerm, searchTerm != VacancyRepository.cachedSearchTerm)
+    }
+
+    fun updateSearchTerm(newTerm: String) {
+        searchTerm = newTerm
     }
 
     fun refreshScrollPosition(newPosition: Int) {

@@ -19,7 +19,8 @@ import javax.inject.Inject
 class VacancyRepository {
 
     companion object {
-        var searchTerm: String = ""
+        var cachedSearchTerm = ""
+            private set
         val instance by lazy { VacancyRepository() }
     }
 
@@ -34,12 +35,18 @@ class VacancyRepository {
         Resolver.serviceComponent.inject(this)
     }
 
-    fun getVacancy(search: String) : LiveData<PagedList<Vacancy>> {
-        searchTerm = search
-        if(!::pagedListSource.isInitialized) {
+    fun getVacancy(search: String, recreate: Boolean) : LiveData<PagedList<Vacancy>> {
+        cachedSearchTerm = search
+        if(!recreate) {
+            if(!::pagedListSource.isInitialized) {
+                pagedListSource = LivePagedListBuilder(VacancyDataSourceFactory(database, service), getConfig())
+                    .build()
+            }
+        } else {
             pagedListSource = LivePagedListBuilder(VacancyDataSourceFactory(database, service), getConfig())
                 .build()
         }
+
         return pagedListSource
     }
 
@@ -58,7 +65,7 @@ class VacancyRepository {
         override fun create(): DataSource<Int, Vacancy> {
             return object : PageKeyedDataSource<Int, Vacancy>() {
                 override fun loadInitial(params: LoadInitialParams<Int>, callback: LoadInitialCallback<Int, Vacancy>) {
-                    loadPage(searchTerm, 0, object : ResponseCallback {
+                    loadPage(cachedSearchTerm, 0, object : ResponseCallback {
                         override fun handleResponse(resp: List<Vacancy>) {
                             callback.onResult(resp, null, 1)
                         }
@@ -66,7 +73,7 @@ class VacancyRepository {
                 }
 
                 override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, Vacancy>) {
-                    loadPage(searchTerm, params.key, object : ResponseCallback {
+                    loadPage(cachedSearchTerm, params.key, object : ResponseCallback {
                         override fun handleResponse(resp: List<Vacancy>) {
                             callback.onResult(resp, params.key+1)
                         }
@@ -74,7 +81,7 @@ class VacancyRepository {
                 }
 
                 override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, Vacancy>) {
-                    loadPage(searchTerm, params.key, object : ResponseCallback {
+                    loadPage(cachedSearchTerm, params.key, object : ResponseCallback {
                         override fun handleResponse(resp: List<Vacancy>) {
                             callback.onResult(resp, params.key-1)
                         }
@@ -125,7 +132,7 @@ class VacancyRepository {
                 if (searchTerm.isEmpty())
                     database.vacancyDao().getByPage(page)
                 else
-                    database.vacancyDao().getByQuery(searchTerm, page)
+                    database.vacancyDao().getByQuery("%$searchTerm%", page)
             )
         }
     }

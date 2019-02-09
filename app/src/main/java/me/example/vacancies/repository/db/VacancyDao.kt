@@ -12,6 +12,6 @@ interface VacancyDao {
     fun save(entity: List<Vacancy>)
     @Query("SELECT * FROM vacancy WHERE page=:page")
     fun getByPage(page: Int) : List<Vacancy>
-    @Query("SELECT * from vacancy WHERE title LIKE :request AND page=:page")
+    @Query("SELECT * from vacancy WHERE title LIKE :request OR company LIKE :request OR description LIKE :request AND page=:page")
     fun getByQuery(request: String, page: Int) : List<Vacancy>
 }

@@ -7,4 +7,6 @@
     <string name="location">Location:</string>
     <string name="how_to_apply">How to apply:</string>
     <string name="details">Details</string>
+    <string name="search">Search</string>
+    <string name="search_vacancies">Search vacancies</string>
 </resources>

@@ -6,5 +6,5 @@ object Constants {
     const val PageSize = 50
     const val PrefetchDistance = 5
     const val UpdateTimeout = 100L
-    const val ScrollUpdateTimeout = 300L
+    const val LongUpdateTimeout = 300L
 }
